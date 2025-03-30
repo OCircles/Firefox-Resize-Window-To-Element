@@ -2,6 +2,8 @@ let lastClickedElement = null;
 let isPickerActive = false;
 let highlightedElement = null;
 let highlightWrapper = null;
+let lastHoveredElement = null;
+let debounceTimeout = null;
 
 document.addEventListener("contextmenu", (event) => {
   lastClickedElement = event.target;
@@ -11,28 +13,36 @@ function highlightElement(element) {
   if (highlightedElement) {
     removeHighlight();
   }
+  if (element === lastHoveredElement) return;
 
-  // Always create a wrapper div
+  const rect = element.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const viewportWidth = window.innerWidth;
+  const isLarge = rect.height > viewportHeight || rect.width > viewportWidth;
+
+  // Create the wrapper div
   highlightWrapper = document.createElement('div');
-  highlightWrapper.classList.add('element-picker-highlight-wrapper');
-  
-  // Insert wrapper before the element and move element inside it
-  element.parentNode.insertBefore(highlightWrapper, element);
-  highlightWrapper.appendChild(element);
-  
+  highlightWrapper.classList.add(isLarge ? 'element-picker-highlight-wrapper-large' : 'element-picker-highlight-wrapper');
+
+  // Position the wrapper to match the element's exact location and size
+  highlightWrapper.style.left = `${rect.left + window.scrollX}px`;
+  highlightWrapper.style.top = `${rect.top + window.scrollY}px`;
+  highlightWrapper.style.width = `${rect.width}px`;
+  highlightWrapper.style.height = `${rect.height}px`;
+
+  // Append to body (out of flow) instead of wrapping the element
+  document.body.appendChild(highlightWrapper);
+
   highlightedElement = highlightWrapper;
+  lastHoveredElement = element;
 }
 
 function removeHighlight() {
   if (highlightedElement && highlightWrapper) {
-    // Move the wrapped element back to its original parent and remove wrapper
-    const wrappedElement = highlightedElement.firstChild;
-    if (wrappedElement && highlightWrapper.parentNode) {
-      highlightWrapper.parentNode.insertBefore(wrappedElement, highlightWrapper);
-      highlightWrapper.remove();
-    }
+    highlightWrapper.remove();
     highlightWrapper = null;
     highlightedElement = null;
+    lastHoveredElement = null;
   }
 }
 
@@ -41,32 +51,52 @@ function startPicker() {
   
   isPickerActive = true;
   
-  document.addEventListener('mouseover', mouseOverHandler);
-  document.addEventListener('mouseout', mouseOutHandler);
+  document.addEventListener('mouseover', mouseOverHandler, { capture: true });
+  document.addEventListener('mouseout', mouseOutHandler, { capture: true });
   document.addEventListener('click', clickHandler, { capture: true });
   document.addEventListener('mousedown', preventDefaultHandler, { capture: true });
   document.addEventListener('mouseup', preventDefaultHandler, { capture: true });
+  document.addEventListener('mouseover', blockMouseOver, { capture: true });
 }
 
 function stopPicker() {
   isPickerActive = false;
   removeHighlight();
-  document.removeEventListener('mouseover', mouseOverHandler);
-  document.removeEventListener('mouseout', mouseOutHandler);
+  document.removeEventListener('mouseover', mouseOverHandler, { capture: true });
+  document.removeEventListener('mouseout', mouseOutHandler, { capture: true });
   document.removeEventListener('click', clickHandler, { capture: true });
   document.removeEventListener('mousedown', preventDefaultHandler, { capture: true });
   document.removeEventListener('mouseup', preventDefaultHandler, { capture: true });
+  document.removeEventListener('mouseover', blockMouseOver, { capture: true });
+  if (debounceTimeout) {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = null;
+  }
 }
 
-const mouseOverHandler = (e) => {
-  if (!isPickerActive) return;
-  highlightElement(e.target);
+const debounce = (func, wait) => {
+  return (e) => {
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => func(e), wait);
+  };
 };
 
-const mouseOutHandler = (e) => {
+const blockMouseOver = (e) => {
   if (!isPickerActive) return;
-  removeHighlight();
+  e.stopPropagation();
 };
+
+const mouseOverHandler = debounce((e) => {
+  if (!isPickerActive) return;
+  e.stopPropagation();
+  highlightElement(e.target);
+}, 50);
+
+const mouseOutHandler = debounce((e) => {
+  if (!isPickerActive) return;
+  e.stopPropagation();
+  removeHighlight();
+}, 50);
 
 const preventDefaultHandler = (e) => {
   if (!isPickerActive) return;
@@ -83,7 +113,7 @@ const clickHandler = (e) => {
   e.stopImmediatePropagation();
   
   lastClickedElement = e.target;
-  const rect = highlightWrapper.getBoundingClientRect(); // Always use wrapper's rect
+  const rect = lastClickedElement.getBoundingClientRect(); // Use original element’s rect for resize
   
   browser.runtime.sendMessage({
     action: "triggerResize",

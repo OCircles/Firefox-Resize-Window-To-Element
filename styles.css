@@ -1,9 +1,9 @@
 .element-picker-highlight-wrapper {
-  position: relative !important;
-  display: inline-block !important; /* Preserves original layout */
+  position: absolute !important;
   outline: 2px solid #dd2828 !important;
   box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.5) !important;
   z-index: 9999 !important;
+  pointer-events: none !important; /* Prevent wrapper from intercepting mouse events */
 }
 
 .element-picker-highlight-wrapper::after {
@@ -16,4 +16,13 @@
   background-color: rgba(255, 0, 0, 0.15) !important;
   pointer-events: none !important;
   z-index: 10000 !important;
+}
+
+/* Style for large elements */
+.element-picker-highlight-wrapper-large {
+  position: absolute !important;
+  outline: 2px solid #dd2828 !important;
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.5) !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
 }
