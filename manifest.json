@@ -1,0 +1,29 @@
+{
+  "manifest_version": 2,
+  "name": "Window Resizer",
+  "version": "1.0",
+  "description": "Resizes the Firefox window to the size of a right-clicked element.",
+  "permissions": [
+    "windows",
+    "contextMenus",
+	  "activeTab",
+    "storage"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+	  "css": ["styles.css"]
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "browser_style": true
+  },
+  "icons": {
+    "48": "icon.png"
+  }
+}

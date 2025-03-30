@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Element Picker Settings</title>
+</head>
+<body>
+  <form id="settings-form">
+    <fieldset>
+      <legend>Padding Settings</legend>
+      
+      <label for="widthPadding">Width Padding:</label>
+      <input type="number" id="widthPadding" min="0" step="1"><br><br>
+      
+      <label for="heightPadding">Height Padding:</label>
+      <input type="number" id="heightPadding" min="0" step="1"><br><br>
+      
+      <label for="scrollbarWidth">Scrollbar Width:</label>
+      <input type="number" id="scrollbarWidth" min="0" step="1"><br><br>
+      
+      <label for="scrollbarHeight">Scrollbar Height:</label>
+      <input type="number" id="scrollbarHeight" min="0" step="1"><br><br>
+      
+      <button type="submit">Save</button>
+      <button type="button" id="reset">Reset to Defaults</button>
+    </fieldset>
+  </form>
+  <div id="status"></div>
+  
+  <script src="options.js"></script>
+</body>
+</html>
