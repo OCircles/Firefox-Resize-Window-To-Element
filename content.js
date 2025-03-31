@@ -20,21 +20,19 @@ function highlightElement(element) {
   const viewportWidth = window.innerWidth;
   const isLarge = rect.height > viewportHeight || rect.width > viewportWidth;
 
-  // Create the wrapper div
   highlightWrapper = document.createElement('div');
   highlightWrapper.classList.add(isLarge ? 'element-picker-highlight-wrapper-large' : 'element-picker-highlight-wrapper');
 
-  // Position the wrapper to match the element's exact location and size
   highlightWrapper.style.left = `${rect.left + window.scrollX}px`;
   highlightWrapper.style.top = `${rect.top + window.scrollY}px`;
   highlightWrapper.style.width = `${rect.width}px`;
   highlightWrapper.style.height = `${rect.height}px`;
 
-  // Append to body (out of flow) instead of wrapping the element
   document.body.appendChild(highlightWrapper);
 
   highlightedElement = highlightWrapper;
   lastHoveredElement = element;
+
 }
 
 function removeHighlight() {
@@ -105,7 +103,7 @@ const preventDefaultHandler = (e) => {
   return false;
 };
 
-const clickHandler = (e) => {
+const clickHandler = async (e) => {
   if (!isPickerActive) return;
   
   e.preventDefault();
@@ -113,14 +111,22 @@ const clickHandler = (e) => {
   e.stopImmediatePropagation();
   
   lastClickedElement = e.target;
-  const rect = lastClickedElement.getBoundingClientRect(); // Use original element’s rect for resize
-  
+  const rect = lastClickedElement.getBoundingClientRect();
+
+  // Get the true zoom level from background script
+  const response = await browser.runtime.sendMessage({ action: "getZoom" });
+  const zoom = response.zoom;
+
+  // Adjust zoomed size to unzoomed
+  const width = Math.round(rect.width * zoom);
+  const height = Math.round(rect.height * zoom);
+
   browser.runtime.sendMessage({
     action: "triggerResize",
-    width: Math.round(rect.width),
-    height: Math.round(rect.height)
+    width: width,
+    height: height
   });
-  
+
   stopPicker();
   
   return false;
@@ -131,9 +137,11 @@ browser.runtime.onMessage.addListener((message) => {
     startPicker();
   } else if (message.action === "getElementSize" && lastClickedElement) {
     const rect = lastClickedElement.getBoundingClientRect();
-    return Promise.resolve({
-      width: Math.round(rect.width),
-      height: Math.round(rect.height)
+    return browser.runtime.sendMessage({ action: "getZoom" }).then((response) => {
+      const zoom = response.zoom;
+      const width = Math.round(rect.width * zoom);
+      const height = Math.round(rect.height * zoom);
+      return { width: width, height: height };
     });
   } else if (message.action === "scrollToElement" && lastClickedElement) {
     lastClickedElement.scrollIntoView({
