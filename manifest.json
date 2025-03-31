@@ -4,7 +4,6 @@
   "version": "1.0",
   "description": "Resizes the Firefox window to the size of an element.",
   "permissions": [
-    "windows",
     "contextMenus",
 	  "activeTab",
     "tabs",
