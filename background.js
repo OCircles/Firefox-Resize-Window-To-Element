@@ -27,7 +27,10 @@ function getAdjustedSize(width, height) {
   return browser.storage.local.get(defaultSettings).then((settings) => {
     const adjustedWidth = width + settings.widthPadding - settings.scrollbarWidth;
     const adjustedHeight = height + settings.heightPadding + settings.scrollbarHeight * 2;
-    return { width: Math.round(adjustedWidth), height: Math.round(adjustedHeight) };
+    return {
+      width: Math.round(adjustedWidth),
+      height: Math.round(adjustedHeight)
+    };
   });
 }
 
@@ -52,17 +55,18 @@ browser.runtime.onMessage.addListener((message, sender) => {
             resizeWindow(size.width, size.height, sender.tab.id);
           });
         } else if (behavior === "new" || behavior === "move") {
-          // Get current window dimensions
+          // Get current window dimensions and incognito state
           browser.windows.getCurrent().then((currentWindow) => {
-            const { width: currentWidth, height: currentHeight } = currentWindow;
+            const { width: currentWidth, height: currentHeight, incognito } = currentWindow;
             const originalTabId = sender.tab.id;
             
-            // Create new window with same dimensions
+            // Create new window with same dimensions and incognito state
             browser.windows.create({
               url: sender.tab.url,
               width: currentWidth,
               height: currentHeight,
-              type: "normal"
+              type: "normal",
+              incognito: incognito // Set incognito based on current window
             }).then((newWindow) => {
               const newTabId = newWindow.tabs[0].id;
               // Wait for the new tab to fully load
