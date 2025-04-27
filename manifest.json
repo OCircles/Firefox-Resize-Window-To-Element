@@ -1,11 +1,11 @@
 {
   "manifest_version": 2,
   "name": "Resize Window To Element",
-  "version": "1.1",
+  "version": "1.2",
   "description": "Resizes the Firefox window to the size of an element.",
   "permissions": [
     "contextMenus",
-	  "activeTab",
+    "activeTab",
     "tabs",
     "storage"
   ],
@@ -16,7 +16,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-	  "css": ["styles.css"]
+      "css": ["styles.css"]
     }
   ],
   "options_ui": {

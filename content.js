@@ -32,7 +32,6 @@ function highlightElement(element) {
 
   highlightedElement = highlightWrapper;
   lastHoveredElement = element;
-
 }
 
 function removeHighlight() {

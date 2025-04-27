@@ -8,7 +8,8 @@ const defaultSettings = {
   widthPadding: 50,
   heightPadding: 100,
   scrollbarWidth: 17,
-  scrollbarHeight: 17
+  scrollbarHeight: 17,
+  resizeBehavior: "current"
 };
 
 function resizeWindow(width, height, tabId) {
@@ -38,8 +39,55 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
 
 browser.runtime.onMessage.addListener((message, sender) => {
   if (message.action === "triggerResize" && message.width && message.height) {
-    getAdjustedSize(message.width, message.height).then((size) => {
-      resizeWindow(size.width, size.height, sender.tab.id);
+    browser.storage.local.get(defaultSettings).then((settings) => {
+      const behavior = settings.resizeBehavior;
+      
+      // Check number of tabs in the current window
+      browser.tabs.query({ windowId: sender.tab.windowId }).then((tabs) => {
+        const isSingleTab = tabs.length === 1;
+        
+        if (behavior === "current" || isSingleTab) {
+          // Resize current window
+          getAdjustedSize(message.width, message.height).then((size) => {
+            resizeWindow(size.width, size.height, sender.tab.id);
+          });
+        } else if (behavior === "new" || behavior === "move") {
+          // Get current window dimensions
+          browser.windows.getCurrent().then((currentWindow) => {
+            const { width: currentWidth, height: currentHeight } = currentWindow;
+            const originalTabId = sender.tab.id;
+            
+            // Create new window with same dimensions
+            browser.windows.create({
+              url: sender.tab.url,
+              width: currentWidth,
+              height: currentHeight,
+              type: "normal"
+            }).then((newWindow) => {
+              const newTabId = newWindow.tabs[0].id;
+              // Wait for the new tab to fully load
+              browser.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
+                if (tabId === newTabId && changeInfo.status === "complete") {
+                  browser.tabs.onUpdated.removeListener(listener);
+                  // Send message to resize the new window
+                  getAdjustedSize(message.width, message.height).then((size) => {
+                    browser.windows.update(newWindow.id, {
+                      width: size.width,
+                      height: size.height
+                    }).then(() => {
+                      browser.tabs.sendMessage(newTabId, { action: "scrollToElement" });
+                      // If "move" behavior, close the original tab
+                      if (behavior === "move" && !isSingleTab) {
+                        browser.tabs.remove(originalTabId);
+                      }
+                    });
+                  });
+                }
+              });
+            });
+          });
+        }
+      });
     });
   } else if (message.action === "getZoom") {
     return browser.tabs.getZoom(sender.tab.id).then((zoom) => {

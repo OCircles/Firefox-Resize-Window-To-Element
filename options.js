@@ -3,7 +3,8 @@ const defaultSettings = {
   widthPadding: 50,
   heightPadding: 100,
   scrollbarWidth: 17,
-  scrollbarHeight: 17
+  scrollbarHeight: 17,
+  resizeBehavior: "current"
 };
 
 // Load saved settings into form
@@ -13,6 +14,7 @@ function loadSettings() {
     document.getElementById('heightPadding').value = settings.heightPadding;
     document.getElementById('scrollbarWidth').value = settings.scrollbarWidth;
     document.getElementById('scrollbarHeight').value = settings.scrollbarHeight;
+    document.getElementById('resizeBehavior').value = settings.resizeBehavior;
   });
 }
 
@@ -23,7 +25,8 @@ document.getElementById('settings-form').addEventListener('submit', (e) => {
     widthPadding: parseInt(document.getElementById('widthPadding').value),
     heightPadding: parseInt(document.getElementById('heightPadding').value),
     scrollbarWidth: parseInt(document.getElementById('scrollbarWidth').value),
-    scrollbarHeight: parseInt(document.getElementById('scrollbarHeight').value)
+    scrollbarHeight: parseInt(document.getElementById('scrollbarHeight').value),
+    resizeBehavior: document.getElementById('resizeBehavior').value
   };
   
   browser.storage.local.set(settings).then(() => {
